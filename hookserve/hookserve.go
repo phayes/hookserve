@@ -1,4 +1,4 @@
-package githubtest
+package hookserve
 
 import (
 	"github.com/bmatsuo/go-jsontree"
