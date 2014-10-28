@@ -7,6 +7,15 @@ import (
 	"strconv"
 )
 
+// A list of valid github webhook IP addresses
+// A request from an IP address not in this list will fail
+var ValidIP []string = []string{
+	"207.97.227.253",
+	"50.57.128.197",
+	"108.171.174.178",
+	"50.57.231.61",
+}
+
 type Commit struct {
 	Owner  string
 	Repo   string
@@ -31,7 +40,7 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		Port:   80,
-		Path:   "githubtest",
+		Path:   "postreceive",
 		Events: make(chan Commit, 10), // buffered to 10 items
 	}
 }
