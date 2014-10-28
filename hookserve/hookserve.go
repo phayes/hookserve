@@ -40,7 +40,7 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		Port:   80,
-		Path:   "postreceive",
+		Path:   "/postreceive",
 		Events: make(chan Commit, 10), // buffered to 10 items
 	}
 }
@@ -51,7 +51,10 @@ func (s *Server) ListenAndServe() error {
 
 func (s *Server) GoListenAndServe() {
 	go func() {
-		s.ListenAndServe()
+		err := s.ListenAndServe()
+		if err != nil {
+			panic(err)
+		}
 	}()
 }
 
