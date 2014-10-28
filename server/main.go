@@ -29,9 +29,7 @@ func main() {
 
 	app.Action = func(c *cli.Context) {
 		server := hookserve.NewServer()
-		go func() {
-			server.ListenAndServe()
-		}()
+		server.GoListenAndServe()
 
 		for {
 			select {

@@ -40,6 +40,12 @@ func (s *Server) ListenAndServe() error {
 	return http.ListenAndServe(":"+strconv.Itoa(s.Port), s)
 }
 
+func (s *Server) GoListenAndServe() {
+	go func() {
+		s.ListenAndServe()
+	}()
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
