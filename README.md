@@ -1,4 +1,4 @@
-hookserve
+HookServe
 =========
 
 HookServe is a small golang utility for receiving github webhooks. 
