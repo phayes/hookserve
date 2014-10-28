@@ -11,7 +11,7 @@ import (
 func main() {
 
 	app := cli.NewApp()
-	app.Name = "githubtest"
+	app.Name = "hookserve"
 	app.Usage = "A small little application that listens for commit / push webhook events from github and runs a specified command"
 
 	app.Flags = []cli.Flag{
