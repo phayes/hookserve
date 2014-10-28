@@ -29,6 +29,7 @@ func main() {
 
 	app.Action = func(c *cli.Context) {
 		server := hookserve.NewServer()
+		server.Port = c.Int("port")
 		server.GoListenAndServe()
 
 		for {
