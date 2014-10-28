@@ -16,3 +16,5 @@ for {
 	}
 }
 ```
+
+![Configuring webhooks in github](https://i.imgur.com/XtQSuYI.png)
