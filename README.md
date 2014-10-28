@@ -5,9 +5,7 @@ HookServe is a small golang utility for receiving github webhooks.
 
 ```go
 server := hookserve.NewServer()
-go func() {
-	server.ListenAndServe()
-}()
+server.GoListenAndServe()
 
 for {
 	select {
