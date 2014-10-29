@@ -7,41 +7,33 @@ import (
 	"strconv"
 )
 
-// A list of valid github webhook IP addresses
-// A request from an IP address not in this list will fail
-var ValidIP []string = []string{
-	"207.97.227.253",
-	"50.57.128.197",
-	"108.171.174.178",
-	"50.57.231.61",
-}
-
-type Commit struct {
+type Event struct {
 	Owner  string
 	Repo   string
 	Branch string
 	Commit string
 }
 
-func (c *Commit) String() (output string) {
-	output += "owner:  " + c.Owner + "\n"
-	output += "repo:   " + c.Repo + "\n"
-	output += "branch: " + c.Branch + "\n"
-	output += "commit: " + c.Commit + "\n"
+func (e *Event) String() (output string) {
+	output += "owner:  " + e.Owner + "\n"
+	output += "repo:   " + e.Repo + "\n"
+	output += "branch: " + e.Branch + "\n"
+	output += "commit: " + e.Commit + "\n"
 	return
 }
 
 type Server struct {
-	Port   int
-	Path   string
-	Events chan Commit
+	Port   int        // Port to listen on. Defaults to 80
+	Path   string     // Path to receive on. Defaults to postreceive
+	Secret string     // Option secret key for authenticating via HMAC
+	Events chan Event // Channel of events. Read from this channel to get push events as they happen.
 }
 
 func NewServer() *Server {
 	return &Server{
 		Port:   80,
 		Path:   "/postreceive",
-		Events: make(chan Commit, 10), // buffered to 10 items
+		Events: make(chan Event, 10), // buffered to 10 items
 	}
 }
 
@@ -93,8 +85,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Parse the request and build the Commit
-	commit := Commit{}
+	// Parse the request and build the Event
+	event := Event{}
 
 	if eventType == "push" {
 		rawRef, err := request.Get("ref").String()
@@ -108,18 +100,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Fill in values
-		commit.Branch = rawRef[11:]
-		commit.Repo, err = request.Get("repository").Get("name").String()
+		event.Branch = rawRef[11:]
+		event.Repo, err = request.Get("repository").Get("name").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		commit.Commit, err = request.Get("head_commit").Get("id").String()
+		event.Commit, err = request.Get("head_commit").Get("id").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		commit.Owner, err = request.Get("repository").Get("owner").Get("name").String()
+		event.Owner, err = request.Get("repository").Get("owner").Get("name").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -137,33 +129,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Fill in values
-		commit.Repo, err = request.Get("pull_request").Get("head").Get("repo").Get("name").String()
+		event.Repo, err = request.Get("pull_request").Get("head").Get("repo").Get("name").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		commit.Commit, err = request.Get("pull_request").Get("head").Get("sha").String()
+		event.Commit, err = request.Get("pull_request").Get("head").Get("sha").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		commit.Branch, err = request.Get("pull_request").Get("head").Get("ref").String()
+		event.Branch, err = request.Get("pull_request").Get("head").Get("ref").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		commit.Owner, err = request.Get("pull_request").Get("head").Get("repo").Get("owner").Get("login").String()
+		event.Owner, err = request.Get("pull_request").Get("head").Get("repo").Get("owner").Get("login").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
-	// We've built our Commit - put it into the channel and we're done
+	// We've built our Event - put it into the channel and we're done
 	go func() {
-		s.Events <- commit
+		s.Events <- event
 	}()
 
-	w.Write([]byte(commit.String()))
-	w.Write([]byte("\n\nOK"))
+	w.Write([]byte(event.String()))
 }
