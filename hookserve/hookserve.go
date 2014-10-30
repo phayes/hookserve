@@ -85,6 +85,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if s.Secret != "" {
 		sig := req.Header.Get("X-Hub-Signature")
 
+		if sig == "" {
+			http.Error(w, "403 Forbidden - Missing X-Hub-Signature required for HMAC verification", http.StatusForbidden)
+			return
+		}
+
 		mac := hmac.New(sha1.New, []byte(s.Secret))
 		mac.Write(body)
 		expectedMAC := mac.Sum(nil)
