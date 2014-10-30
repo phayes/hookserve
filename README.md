@@ -25,7 +25,7 @@ for {
 ###Command Line Utility
 
 
-It also comes with a command-line utility that lets you pass webhook push events to other commands
+It also comes with a command-line utility that lets you pass webhook push events to other commands. 
 
 ```sh
 $ hookserve --port=8888 logger -t PushEvent #log github webhook push event to the system log (/var/log/message) via the logger command
