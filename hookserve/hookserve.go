@@ -11,10 +11,10 @@ import (
 )
 
 type Event struct {
-	Owner  string
-	Repo   string
-	Branch string
-	Commit string
+	Owner  string // The username owner of the repository.
+	Repo   string // The name of the repository
+	Branch string // The branch the event took place on.
+	Commit string // The head commit hash attached to the event.
 }
 
 func (e *Event) String() (output string) {
@@ -32,6 +32,8 @@ type Server struct {
 	Events chan Event // Channel of events. Read from this channel to get push events as they happen.
 }
 
+// Create a new server with sensible defaults.
+// By default the Port is set to 80 and the Path is set to `/postreceive`
 func NewServer() *Server {
 	return &Server{
 		Port:   80,
@@ -40,10 +42,12 @@ func NewServer() *Server {
 	}
 }
 
+// Spin up the server and listen for github webhook push events. The events will be passed to Server.Events channel.
 func (s *Server) ListenAndServe() error {
 	return http.ListenAndServe(":"+strconv.Itoa(s.Port), s)
 }
 
+// Inside a go-routine, spin up the server and listen for github webhook push events. The events will be passed to Server.Events channel.
 func (s *Server) GoListenAndServe() {
 	go func() {
 		err := s.ListenAndServe()
@@ -53,6 +57,8 @@ func (s *Server) GoListenAndServe() {
 	}()
 }
 
+// Satisfies the http.Handler interface
+// Instead of calling Server.ListenAndServe you can integrate hookserve inside your own server you can use hookserve.Server as a http.Handler interface.
 func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
