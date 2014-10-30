@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 type Event struct {
@@ -90,7 +89,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		mac.Write(body)
 		expectedMAC := mac.Sum(nil)
 		expectedSig := "sha1=" + hex.EncodeToString(expectedMAC)
-		if !hmac.Equal(expectedSig, sig) {
+		if !hmac.Equal([]byte(expectedSig), []byte(sig)) {
 			http.Error(w, "403 Forbidden - HMAC verification failed -- "+expectedSig+" -- "+sig, http.StatusForbidden)
 			return
 		}
