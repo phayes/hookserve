@@ -58,7 +58,7 @@ func (s *Server) GoListenAndServe() {
 }
 
 // Satisfies the http.Handler interface.
-// Instead of calling Server.ListenAndServe you can integrate hookserve.Server inside your own server.
+// Instead of calling Server.ListenAndServe you can integrate hookserve.Server inside your own http server.
 func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
