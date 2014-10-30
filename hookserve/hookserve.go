@@ -27,7 +27,7 @@ func (e *Event) String() (output string) {
 
 type Server struct {
 	Port   int        // Port to listen on. Defaults to 80
-	Path   string     // Path to receive on. Defaults to postreceive
+	Path   string     // Path to receive on. Defaults to "/postreceive"
 	Secret string     // Option secret key for authenticating via HMAC
 	Events chan Event // Channel of events. Read from this channel to get push events as they happen.
 }
