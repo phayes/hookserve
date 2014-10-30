@@ -83,7 +83,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// If we have a Secret set, we should check the MAC
 	if s.Secret != "" {
-		sig := req.Header.Get("X-GitHub-Signature")
+		sig := req.Header.Get("X-Hub-Signature")
 
 		mac := hmac.New(sha1.New, []byte(s.Secret))
 		mac.Write(body)
