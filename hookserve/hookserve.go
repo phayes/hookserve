@@ -11,10 +11,10 @@ import (
 )
 
 type Event struct {
-	Owner  string // The username owner of the repository.
+	Owner  string // The username of the owner of the repository
 	Repo   string // The name of the repository
-	Branch string // The branch the event took place on.
-	Commit string // The head commit hash attached to the event.
+	Branch string // The branch the event took place on
+	Commit string // The head commit hash attached to the event
 }
 
 func (e *Event) String() (output string) {
@@ -57,8 +57,8 @@ func (s *Server) GoListenAndServe() {
 	}()
 }
 
-// Satisfies the http.Handler interface
-// Instead of calling Server.ListenAndServe you can integrate hookserve inside your own server you can use hookserve.Server as a http.Handler interface.
+// Satisfies the http.Handler interface.
+// Instead of calling Server.ListenAndServe you can integrate hookserve.Server inside your own server.
 func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
