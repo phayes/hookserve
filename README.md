@@ -20,7 +20,7 @@ for {
 ```
 
 
-##Command Line Utility
+###Command Line Utility
 
 
 It also comes with a command-line utility that lets you pass webhook push events to other commands
@@ -30,7 +30,7 @@ $ hookserve --port=8888 logger -t PushEvent #log github webhook push event to th
 ```
 
 
-##Settings up GitHub Webhooks
+###Settings up GitHub Webhooks
 
 
 Setting up webhooks on github is easy. Navigate to `https://github.com/<your-name>/<your-repo>/settings/hooks' and create a new webhook. Setting up your webhook should look something like this:
