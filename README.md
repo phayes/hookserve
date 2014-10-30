@@ -33,6 +33,6 @@ $ hookserve --port=8888 logger -t PushEvent #log github webhook push event to th
 ###Settings up GitHub Webhooks
 
 
-Setting up webhooks on github is easy. Navigate to `https://github.com/<your-name>/<your-repo>/settings/hooks' and create a new webhook. Setting up your webhook should look something like this:
+Setting up webhooks on github is easy. Navigate to `github.com/<your-name>/<your-repo>/settings/hooks` and create a new webhook. Setting up your webhook should look something like this:
 
 ![Configuring webhooks in github](https://i.imgur.com/u3ciUD7.png)
