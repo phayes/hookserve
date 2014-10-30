@@ -95,7 +95,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		expectedMAC := mac.Sum(nil)
 		expectedSig := "sha1=" + hex.EncodeToString(expectedMAC)
 		if !hmac.Equal([]byte(expectedSig), []byte(sig)) {
-			http.Error(w, "403 Forbidden - HMAC verification failed -- "+expectedSig+" -- "+sig, http.StatusForbidden)
+			http.Error(w, "403 Forbidden - HMAC verification failed", http.StatusForbidden)
 			return
 		}
 	}
