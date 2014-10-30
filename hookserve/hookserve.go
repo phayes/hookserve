@@ -1,10 +1,14 @@
 package hookserve
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/hex"
 	"github.com/bmatsuo/go-jsontree"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Event struct {
@@ -76,6 +80,24 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// If we have a Secret set, we should check the MAC
+	if s.Secret != "" {
+		sig := strings.TrimPrefix(req.Header.Get("X-GitHub-Signature"), "sha1=")
+		messageMAC, err := hex.DecodeString(sig)
+		if err != nil {
+			http.Error(w, "403 Forbidden - Could not parse X-GitHub-Signature header", http.StatusForbidden)
+			return
+		}
+
+		mac := hmac.New(sha1.New, []byte(s.Secret))
+		mac.Write(body)
+		expectedMAC := mac.Sum(nil)
+		if !hmac.Equal(messageMAC, expectedMAC) {
+			http.Error(w, "403 Forbidden - HMAC verification failed", http.StatusForbidden)
+			return
+		}
 	}
 
 	request := jsontree.New()

@@ -21,15 +21,16 @@ func main() {
 			Usage: "port on which to listen for github webhooks",
 		},
 		cli.StringFlag{
-			Name:  "command, c",
+			Name:  "secret, s",
 			Value: "",
-			Usage: "command to run when a webhook is received. The command will be called like so: <command> owner repo branch commit. If no command is specified, the webhook info will be printed to stdout.",
+			Usage: "Secret for HMAC verification. If not provided no HMAC verification will be done and all valid requests will be processed",
 		},
 	}
 
 	app.Action = func(c *cli.Context) {
 		server := hookserve.NewServer()
 		server.Port = c.Int("port")
+		server.Secret = c.String("secret")
 		server.GoListenAndServe()
 
 		for {
