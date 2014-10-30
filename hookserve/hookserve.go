@@ -84,18 +84,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// If we have a Secret set, we should check the MAC
 	if s.Secret != "" {
-		sig := strings.TrimPrefix(req.Header.Get("X-GitHub-Signature"), "sha1=")
-		messageMAC, err := hex.DecodeString(sig)
-		if err != nil {
-			http.Error(w, "403 Forbidden - Could not parse X-GitHub-Signature header", http.StatusForbidden)
-			return
-		}
+		sig := req.Header.Get("X-GitHub-Signature")
 
 		mac := hmac.New(sha1.New, []byte(s.Secret))
 		mac.Write(body)
 		expectedMAC := mac.Sum(nil)
-		if !hmac.Equal(messageMAC, expectedMAC) {
-			http.Error(w, "403 Forbidden - HMAC verification failed", http.StatusForbidden)
+		expectedSig := "sha1=" + hex.EncodeToString(expectedMAC)
+		if !hmac.Equal(expectedSig, sig) {
+			http.Error(w, "403 Forbidden - HMAC verification failed -- "+expectedSig+" -- "+sig, http.StatusForbidden)
 			return
 		}
 	}
