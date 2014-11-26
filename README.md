@@ -31,6 +31,11 @@ It also comes with a command-line utility that lets you pass webhook push events
 $ hookserve --port=8888 logger -t PushEvent #log github webhook push event to the system log (/var/log/message) via the logger command
 ```
 
+#####Downloads
+ - Linux: https://phayes.github.io/bin/current/hookserve/linux/hookserve.gz
+ - Mac:   https://phayes.github.io/bin/current/hookserve/mac/hookserve.gz
+
+
 
 ###Settings up GitHub Webhooks
 
