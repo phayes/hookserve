@@ -35,6 +35,12 @@ $ hookserve --port=8888 logger -t PushEvent #log github webhook push event to th
  - Linux: https://phayes.github.io/bin/current/hookserve/linux/hookserve.gz
  - Mac:   https://phayes.github.io/bin/current/hookserve/mac/hookserve.gz
 
+#####Building Command Line Utility From Source
+```bash
+sudo apt-get install golang                    # Download go. Alternativly build from source: https://golang.org/doc/install/source
+mkdir ~/.gopath && export GOPATH=~/.gopath     # Replace with desired GOPATH
+export PATH=$PATH:$GOPATH/bin                  # For convenience, add go's bin dir to your PATH
+go get github.com/phayes/hookserve/cmd/hookserve
 
 
 ###Settings up GitHub Webhooks
