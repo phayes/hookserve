@@ -4,24 +4,79 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"github.com/bmatsuo/go-jsontree"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
+var ErrInvalidEventFormat = errors.New("Unable to parse event string. Invalid Format.")
+
 type Event struct {
-	Owner  string // The username of the owner of the repository
-	Repo   string // The name of the repository
-	Branch string // The branch the event took place on
-	Commit string // The head commit hash attached to the event
+	Owner      string // The username of the owner of the repository
+	Repo       string // The name of the repository
+	Branch     string // The branch the event took place on
+	Commit     string // The head commit hash attached to the event
+	Type       string // Can be either "pull_request" or "push"
+	BaseOwner  string // For Pull Requests, contains the base owner
+	BaseRepo   string // For Pull Requests, contains the base repo
+	BaseBranch string // For Pull Requests, contains the base branch
+}
+
+// Create a new event from a string, the string format being the same as the one produced by event.String()
+func NewEvent(e string) (*Event, error) {
+	// Trim whitespace
+	e = strings.Trim(e, "\n\t ")
+
+	// Split into lines
+	parts := strings.Split(e, "\n")
+
+	// Sanity checking
+	if len(parts) != 5 || len(parts) != 8 {
+		return nil, ErrInvalidEventFormat
+	}
+	for _, item := range parts {
+		if len(item) < 8 {
+			return nil, ErrInvalidEventFormat
+		}
+	}
+
+	// Fill in values for the event
+	event := Event{}
+	event.Type = parts[0][8:]
+	event.Owner = parts[1][8:]
+	event.Repo = parts[2][8:]
+	event.Branch = parts[3][8:]
+	event.Commit = parts[4][8:]
+
+	// Fill in extra values if it's a pull_request
+	if event.Type == "pull_request" {
+		if len(parts) != 8 {
+			return nil, ErrInvalidEventFormat
+		}
+		event.BaseOwner = parts[5][8:]
+		event.BaseRepo = parts[6][8:]
+		event.BaseBranch = parts[7][8:]
+	}
+
+	return &event, nil
 }
 
 func (e *Event) String() (output string) {
+	output += "type:   " + e.Type + "\n"
 	output += "owner:  " + e.Owner + "\n"
 	output += "repo:   " + e.Repo + "\n"
 	output += "branch: " + e.Branch + "\n"
 	output += "commit: " + e.Commit + "\n"
+
+	if e.Type == "pull_request" {
+		output += "bowner: " + e.BaseOwner + "\n"
+		output += "brepo:  " + e.BaseRepo + "\n"
+		output += "bbranch:" + e.BaseBranch + "\n"
+	}
+
 	return
 }
 
@@ -129,6 +184,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Fill in values
+		event.Type = eventType
 		event.Branch = rawRef[11:]
 		event.Repo, err = request.Get("repository").Get("name").String()
 		if err != nil {
@@ -145,8 +201,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
-	if eventType == "pull_request" {
+	} else if eventType == "pull_request" {
 		action, err := request.Get("action").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -158,12 +213,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Fill in values
-		event.Repo, err = request.Get("pull_request").Get("head").Get("repo").Get("name").String()
+		event.Type = eventType
+		event.Owner, err = request.Get("pull_request").Get("head").Get("repo").Get("owner").Get("login").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		event.Commit, err = request.Get("pull_request").Get("head").Get("sha").String()
+		event.Repo, err = request.Get("pull_request").Get("head").Get("repo").Get("name").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -173,11 +229,29 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		event.Owner, err = request.Get("pull_request").Get("head").Get("repo").Get("owner").Get("login").String()
+		event.Commit, err = request.Get("pull_request").Get("head").Get("sha").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		event.BaseOwner, err = request.Get("pull_request").Get("base").Get("repo").Get("owner").Get("login").String()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		event.BaseRepo, err = request.Get("pull_request").Get("base").Get("repo").Get("name").String()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		event.BaseBranch, err = request.Get("pull_request").Get("base").Get("ref").String()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		http.Error(w, "Unknown Event Type "+eventType, http.StatusInternalServerError)
+		return
 	}
 
 	// We've built our Event - put it into the channel and we're done
