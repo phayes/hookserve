@@ -6,7 +6,6 @@ import (
 	"github.com/phayes/hookserve/hookserve"
 	"os"
 	"os/exec"
-	"time"
 )
 
 func main() {
@@ -40,21 +39,16 @@ func main() {
 		server.Secret = c.String("secret")
 		server.GoListenAndServe()
 
-		for {
-			select {
-			case commit := <-server.Events:
-				if args := c.Args(); len(args) != 0 {
-					root := args[0]
-					rest := append(args[1:], commit.Owner, commit.Repo, commit.Branch, commit.Commit)
-					cmd := exec.Command(root, rest...)
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					cmd.Run()
-				} else {
-					fmt.Println(commit.Owner + " " + commit.Repo + " " + commit.Branch + " " + commit.Commit)
-				}
-			default:
-				time.Sleep(100)
+		for commit := range server.Events {
+			if args := c.Args(); len(args) != 0 {
+				root := args[0]
+				rest := append(args[1:], commit.Owner, commit.Repo, commit.Branch, commit.Commit)
+				cmd := exec.Command(root, rest...)
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				cmd.Run()
+			} else {
+				fmt.Println(commit.Owner + " " + commit.Repo + " " + commit.Branch + " " + commit.Commit)
 			}
 		}
 	}
