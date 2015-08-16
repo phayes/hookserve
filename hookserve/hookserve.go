@@ -81,19 +81,21 @@ func (e *Event) String() (output string) {
 }
 
 type Server struct {
-	Port   int        // Port to listen on. Defaults to 80
-	Path   string     // Path to receive on. Defaults to "/postreceive"
-	Secret string     // Option secret key for authenticating via HMAC
-	Events chan Event // Channel of events. Read from this channel to get push events as they happen.
+	Port       int        // Port to listen on. Defaults to 80
+	Path       string     // Path to receive on. Defaults to "/postreceive"
+	Secret     string     // Option secret key for authenticating via HMAC
+	IgnoreTags bool       // If set to false, also execute command if tag is pushed
+	Events     chan Event // Channel of events. Read from this channel to get push events as they happen.
 }
 
 // Create a new server with sensible defaults.
 // By default the Port is set to 80 and the Path is set to `/postreceive`
 func NewServer() *Server {
 	return &Server{
-		Port:   80,
-		Path:   "/postreceive",
-		Events: make(chan Event, 10), // buffered to 10 items
+		Port:       80,
+		Path:       "/postreceive",
+		IgnoreTags: true,
+		Events:     make(chan Event, 10), // buffered to 10 items
 	}
 }
 
@@ -110,6 +112,14 @@ func (s *Server) GoListenAndServe() {
 			panic(err)
 		}
 	}()
+}
+
+// Checks if the given ref should be ignored
+func (s *Server) ignoreRef(rawRef string) bool {
+	if (rawRef[:10] == "refs/tags/" && !s.IgnoreTags) {
+		return false
+	}
+	return rawRef[:11] != "refs/heads/"
 }
 
 // Satisfies the http.Handler interface.
@@ -179,7 +189,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// If the ref is not a branch, we don't care about it
-		if rawRef[:11] != "refs/heads/" || request.Get("head_commit").IsNull() {
+		if s.ignoreRef(rawRef) || request.Get("head_commit").IsNull() {
 			return
 		}
 
