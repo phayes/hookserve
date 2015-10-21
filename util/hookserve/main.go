@@ -31,12 +31,17 @@ func main() {
 			Value: "",
 			Usage: "Secret for HMAC verification. If not provided no HMAC verification will be done and all valid requests will be processed",
 		},
+		cli.BoolFlag{
+			Name:  "tags, t",
+			Usage: "Also execute the command when a tag is pushed",
+		},
 	}
 
 	app.Action = func(c *cli.Context) {
 		server := hookserve.NewServer()
 		server.Port = c.Int("port")
 		server.Secret = c.String("secret")
+		server.IgnoreTags = !c.Bool("tags")
 		server.GoListenAndServe()
 
 		for commit := range server.Events {
