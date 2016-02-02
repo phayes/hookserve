@@ -20,6 +20,7 @@ type Event struct {
 	Branch     string // The branch the event took place on
 	Commit     string // The head commit hash attached to the event
 	Type       string // Can be either "pull_request" or "push"
+	Action     string // For Pull Requests, contains "assigned", "unassigned", "labeled", "unlabeled", "opened", "closed", "reopened", or "synchronize".
 	BaseOwner  string // For Pull Requests, contains the base owner
 	BaseRepo   string // For Pull Requests, contains the base repo
 	BaseBranch string // For Pull Requests, contains the base branch
@@ -53,12 +54,18 @@ func NewEvent(e string) (*Event, error) {
 
 	// Fill in extra values if it's a pull_request
 	if event.Type == "pull_request" {
-		if len(parts) != 8 {
+		if len(parts) == 9 { // New format
+			event.Action = parts[5][8:]
+			event.BaseOwner = parts[6][8:]
+			event.BaseRepo = parts[7][8:]
+			event.BaseBranch = parts[8][8:]
+		} else if len(parts) == 8 { // Old Format
+			event.BaseOwner = parts[5][8:]
+			event.BaseRepo = parts[6][8:]
+			event.BaseBranch = parts[7][8:]
+		} else {
 			return nil, ErrInvalidEventFormat
 		}
-		event.BaseOwner = parts[5][8:]
-		event.BaseRepo = parts[6][8:]
-		event.BaseBranch = parts[7][8:]
 	}
 
 	return &event, nil
@@ -72,6 +79,7 @@ func (e *Event) String() (output string) {
 	output += "commit: " + e.Commit + "\n"
 
 	if e.Type == "pull_request" {
+		output += "action: " + e.Action + "\n"
 		output += "bowner: " + e.BaseOwner + "\n"
 		output += "brepo:  " + e.BaseRepo + "\n"
 		output += "bbranch:" + e.BaseBranch + "\n"
@@ -116,7 +124,7 @@ func (s *Server) GoListenAndServe() {
 
 // Checks if the given ref should be ignored
 func (s *Server) ignoreRef(rawRef string) bool {
-	if (rawRef[:10] == "refs/tags/" && !s.IgnoreTags) {
+	if rawRef[:10] == "refs/tags/" && !s.IgnoreTags {
 		return false
 	}
 	return rawRef[:11] != "refs/heads/"
@@ -212,13 +220,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	} else if eventType == "pull_request" {
-		action, err := request.Get("action").String()
+		event.Action, err = request.Get("action").String()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		// If the action is not to open or to synchronize we don't care about it
-		if action != "synchronize" && action != "opened" {
 			return
 		}
 
